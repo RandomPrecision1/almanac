@@ -11,7 +11,7 @@ def degToCompass(num):
 def degToPhase(num):
     val = int((num/45)+.5)
     arr = ['New', 'Waxing Crescent', 'First Quarter', 'Waxing Gibbous', 'Full', 'Waning Gibbous', 'Last Quarter', 'Waxing Crescent']
-    return arr[(val % 16)]
+    return arr[(val % 8)]
 
 def searchElongation(time, sun, earth, planet):
 	c_earth = earth.at(time)
