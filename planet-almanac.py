@@ -1,6 +1,8 @@
 import datetime as dt
 from skyfield.api import N, W, wgs84, load
 from skyfield.almanac import find_discrete, risings_and_settings, moon_phase
+from skyfield.data import mpc
+from skyfield.constants import GM_SUN_Pitjeva_2005_km3_s2 as GM_SUN
 from pytz import timezone
 
 def degToCompass(num):
@@ -32,15 +34,28 @@ t0 = ts.from_datetime(start_time)
 t1 = ts.from_datetime(end_time)
 
 eph = load('de440s.bsp')
+
+with load.open('mpcorb.excerpt.dat') as f:
+	mp_eph = mpc.load_mpcorb_dataframe(f)
+
+mp_eph = mp_eph.set_index('designation', drop=False)
+
 sun = eph['sun']
 earth = eph['earth']
 sun_apparent = (earth + location).at(t0).observe(sun).apparent()
 
-planet_list = ['Sun', 'Moon', 'Mercury barycenter', 'Venus barycenter', 'Mars barycenter', 'Jupiter barycenter', 'Saturn barycenter', 'Uranus barycenter', 'Neptune barycenter']
+planet_list = ['Sun', 'Moon', 'Mercury barycenter', 'Venus barycenter', 'Mars barycenter', 'Jupiter barycenter', 'Saturn barycenter', 'Uranus barycenter', 'Neptune barycenter'] # '(1) Ceres', 'Pluto barycenter'
 
 for planet_name in planet_list:
-	planet = eph[planet_name.lower()]
+	if planet_name.startswith('('):
+		planet = mp_eph.loc[planet_name]
+		planet = sun + mpc.mpcorb_orbit(planet, ts, GM_SUN)
+	else:
+		planet = eph[planet_name.lower()]
+		
 	planet_name_t = planet_name.replace(' barycenter', '')
+	planet_name_t = planet_name_t.replace('(1) ', '')
+	
 	
 	planet_apparent = (earth + location).at(t0).observe(planet).apparent()
 	alt, az, d = planet_apparent.altaz()
